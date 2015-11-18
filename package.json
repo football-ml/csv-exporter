@@ -1,0 +1,22 @@
+{
+  "name": "football.json",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "jscs": "^2.1.1",
+    "jshint": "^2.6.3"
+  },
+  "dependencies": {
+    "async": "1.5.0",
+    "cheerio": "0.19.0",
+    "commander": "2.9.0",
+    "deep-diff": "0.3.3",
+    "gendr": "*",
+    "jsonfile": "2.2.3",
+    "json2csv": "3.0.1",
+    "lodash": "3.10.1",
+    "moment": "2.10.6",
+    "superagent": "1.4.0",
+    "winston": "2.1.0"
+  }
+}
