@@ -1,180 +1,104 @@
 'use strict';
 
-var commander = require('commander');
-var lodash = require('lodash');
-var async = require('async');
-var fs = require('fs');
-var GendrFactory = require('gendr');
-var Strategies = GendrFactory.Strategies;
-var json2csv = require('json2csv');
-var moment = require('moment');
-var logger = require('winston');
+const commander = require('commander');
+const fs = require('fs');
+const json2csv = require('json2csv');
+const logger = require('winston');
+
+const Table = require('./model/table');
+const History = require('./model/history');
+const Match = require('./model/match');
 logger.cli();
 
-//node src/weka-export.js -f 2015-10-29 -s 2015-11-16 -c 2015-05-04 -V
-
+// node src/weka-export.js -f 2015-10-29 -s 2015-11-16 -c 2015-05-04 -V
 commander
   .option('-y, --year [s]', 'The year of the season start', '15')
   .option('-c, --countrycode [s]', 'The country code', 'de')
   .option('-l, --league [s]', 'The league', '1')
   .option('-C, --complete [b]', 'Also adds yet unplayed matches to the CSV. [default=false]', false)
+  .option('-V, --verbose [b]', 'Also adds verbose data like team code that makes reading data easier for humans. [default=false]', false)
   .parse(process.argv);
 
-var dataFolderName = '20' + commander.year + '-' + (parseInt(commander.year) + 1);
-var resultsDataFileName = commander.countrycode + '.' + commander.league + '.json';
-var clubsDataFileName = commander.countrycode + '.' + commander.league + '.clubs.json';
+const dataFolderName = '20' + commander.year + '-' + (parseInt(commander.year, 10) + 1);
+const resultsDataFileName = commander.countrycode + '.' + commander.league + '.json';
+const clubsDataFileName = commander.countrycode + '.' + commander.league + '.clubs.json';
 
-var outputFileName = dataFolderName + '_' + Date.now();
-var resultsPath = '../' + dataFolderName + '/' + resultsDataFileName;
-var clubsPath = '../' + dataFolderName + '/' + clubsDataFileName;
+const outputFileName = Date.now() + '_' + dataFolderName;
+const resultsPath = '../' + dataFolderName + '/' + resultsDataFileName;
+const clubsPath = '../' + dataFolderName + '/' + clubsDataFileName;
 
-var rawResults = require(resultsPath);
-var rawClubs = require(clubsPath);
+const rawResults = require(resultsPath);
+const rawClubs = require(clubsPath);
+const clubCodes = rawClubs.clubs.map(club => club.code);
 
-var aggregatedDataPerTeam = {};
+const table = new Table(clubCodes);
+const history = new History(clubCodes);
 
-rawClubs.clubs.map(club => aggregatedDataPerTeam[club.code] = {
-  round: 0,
-  homeHistory: [],
-  awayHistory: [],
-  allHistory: [],
-  lastWin: 1,
-  lastDraw: 1,
-  lastDefeat: 1,
-  numberOfWins: 0,
-  numberOfHomeWins: 0,
-  numberOfAwayWins: 0,
-  numberOfDraws: 0,
-  numberOfAwayDraws: 0,
-  numberOfHomeDraws: 0,
-  numberOfDefeats: 0,
-  numberOfHomeDefeats: 0,
-  numberOfAwayDefeats: 0
-});
+const csvData = [];
+const rounds = rawResults.rounds;
 
-var csvData = [];
+function toColumn(match) {
+  const homeTeam = match.team1.code;
+  const awayTeam = match.team2.code;
 
-var rounds = rawResults.rounds;
-const HOME_TEAM_WIN = 'H';
-const AWAY_TEAM_WIN = 'A';
-const DRAW = 'X';
+  const WEIGHT = 1;
+  const rowAsJSON = {};
 
-function updateHistoryForTeams(match, roundNr) {
-  var homeTeamCode = match.team1.code;
-  var awayTeamCode = match.team2.code;
-
-  aggregatedDataPerTeam[homeTeamCode].round = roundNr;
-  aggregatedDataPerTeam[awayTeamCode].round = roundNr;
-
-  var winner = getResultOfMatch(match);
-
-  if (winner === HOME_TEAM_WIN) {
-    aggregatedDataPerTeam[homeTeamCode].homeHistory.push('W');
-    aggregatedDataPerTeam[homeTeamCode].allHistory.push('W');
-    aggregatedDataPerTeam[awayTeamCode].awayHistory.push('L');
-    aggregatedDataPerTeam[awayTeamCode].allHistory.push('L');
-    aggregatedDataPerTeam[homeTeamCode].lastWin = roundNr;
-    aggregatedDataPerTeam[awayTeamCode].lastDefeat = roundNr;
-
-    aggregatedDataPerTeam[homeTeamCode].numberOfWins += 1;
-    aggregatedDataPerTeam[homeTeamCode].numberOfHomeWins += 1;
-
-    aggregatedDataPerTeam[awayTeamCode].numberOfDefeats += 1;
-    aggregatedDataPerTeam[awayTeamCode].numberOfAwayDefeats += 1;
-
+  if (commander.verbose) {
+    rowAsJSON.round = match.round;
+    rowAsJSON.team_h = homeTeam;
+    rowAsJSON.team_a = awayTeam;
   }
 
-  if (winner === DRAW) {
-    aggregatedDataPerTeam[homeTeamCode].homeHistory.push('X');
-    aggregatedDataPerTeam[homeTeamCode].allHistory.push('X');
-    aggregatedDataPerTeam[awayTeamCode].awayHistory.push('X');
-    aggregatedDataPerTeam[awayTeamCode].allHistory.push('X');
-    aggregatedDataPerTeam[homeTeamCode].lastDraw = roundNr;
-    aggregatedDataPerTeam[awayTeamCode].lastDraw = roundNr;
+  rowAsJSON.team_h_form_last_3 = history.calculateTeamFormForLastNMatches(homeTeam, 3, WEIGHT);
+  rowAsJSON.team_h_form_last_5 = history.calculateTeamFormForLastNMatches(homeTeam, 5, WEIGHT);
+  rowAsJSON.team_h_form_last_10 = history.calculateTeamFormForLastNMatches(homeTeam, 10, WEIGHT);
+  rowAsJSON.team_a_form_last_3 = history.calculateTeamFormForLastNMatches(awayTeam, 3, WEIGHT);
+  rowAsJSON.team_a_form_last_5 = history.calculateTeamFormForLastNMatches(awayTeam, 5, WEIGHT);
+  rowAsJSON.team_a_form_last_10 = history.calculateTeamFormForLastNMatches(awayTeam, 10, WEIGHT);
+  rowAsJSON.form_delta_last_3 = history.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, 3, WEIGHT);
+  rowAsJSON.form_delta_last_5 = history.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, 5, WEIGHT);
+  rowAsJSON.form_delta_last_10 = history.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, 10, WEIGHT);
 
-    aggregatedDataPerTeam[homeTeamCode].numberOfDraws += 1;
-    aggregatedDataPerTeam[homeTeamCode].numberOfHomeDraws += 1;
+  rowAsJSON.team_h_streak_w_3 = history.hasWinningStreakOfNMatches(homeTeam, 3);
+  rowAsJSON.team_a_streak_w_3 = history.hasWinningStreakOfNMatches(awayTeam, 3);
 
-    aggregatedDataPerTeam[awayTeamCode].numberOfDraws += 1;
-    aggregatedDataPerTeam[awayTeamCode].numberOfAwayDraws += 1;
-  }
+  rowAsJSON.team_h_last_w = history.roundsSinceLastWinOfTeam(homeTeam);
+  rowAsJSON.team_h_last_dr = history.roundsSinceLastDrawOfTeam(homeTeam);
+  rowAsJSON.team_h_last_de = history.roundsSinceLastDefeatOfTeam(homeTeam);
+  rowAsJSON.team_a_last_w = history.roundsSinceLastWinOfTeam(awayTeam);
+  rowAsJSON.team_a_last_dr = history.roundsSinceLastDrawOfTeam(awayTeam);
+  rowAsJSON.team_a_last_de = history.roundsSinceLastDefeatOfTeam(awayTeam);
 
-  if (winner === AWAY_TEAM_WIN) {
-    aggregatedDataPerTeam[homeTeamCode].homeHistory.push('L');
-    aggregatedDataPerTeam[homeTeamCode].allHistory.push('L');
-    aggregatedDataPerTeam[awayTeamCode].awayHistory.push('W');
-    aggregatedDataPerTeam[awayTeamCode].allHistory.push('W');
-    aggregatedDataPerTeam[homeTeamCode].lastDefeat = roundNr;
-    aggregatedDataPerTeam[awayTeamCode].lastWin = roundNr;
+  rowAsJSON.team_h_win_perc = history.winPercentageOfTeam(homeTeam);
+  rowAsJSON.team_h_dra_perc = history.drawPercentageOfTeam(homeTeam);
+  rowAsJSON.team_h_def_perc = history.defeatPercentageOfTeam(homeTeam);
+  rowAsJSON.team_a_win_perc = history.winPercentageOfTeam(awayTeam);
+  rowAsJSON.team_a_dra_perc = history.drawPercentageOfTeam(awayTeam);
+  rowAsJSON.team_a_def_perc = history.defeatPercentageOfTeam(awayTeam);
 
-    aggregatedDataPerTeam[homeTeamCode].numberOfDefeats += 1;
-    aggregatedDataPerTeam[homeTeamCode].numberOfHomeDefeats += 1;
+  rowAsJSON.winner = match.result;
 
-    aggregatedDataPerTeam[awayTeamCode].numberOfWins += 1;
-    aggregatedDataPerTeam[awayTeamCode].numberOfAwayWins += 1;
-  }
-}
-
-function getResultOfMatch(match) {
-  return match.score1 > match.score2 ? HOME_TEAM_WIN
-    : (match.score1 < match.score2 ? AWAY_TEAM_WIN : DRAW);
-}
-
-function toColumn(match, roundNr) {
-  var winner = getResultOfMatch(match);
-  var homeTeamCode = match.team1.code;
-  var awayTeamCode = match.team2.code;
-
-  var roundsSinceLastWinOfHomeTeam = roundNr - aggregatedDataPerTeam[homeTeamCode].lastWin;
-  var roundsSinceLastDrawOfHomeTeam = roundNr - aggregatedDataPerTeam[homeTeamCode].lastDraw;
-  var roundsSinceLastDefeatOfHomeTeam = roundNr - aggregatedDataPerTeam[homeTeamCode].lastDefeat;
-
-  var roundsSinceLastWinOfAwayTeam = roundNr - aggregatedDataPerTeam[awayTeamCode].lastWin;
-  var roundsSinceLastDrawOfAwayTeam = roundNr - aggregatedDataPerTeam[awayTeamCode].lastDraw;
-  var roundsSinceLastDefeatOfAwayTeam = roundNr - aggregatedDataPerTeam[awayTeamCode].lastDefeat;
-
-  var matchEntry = {
-    //round: roundNr,
-    //team_h: homeTeamCode,
-    //team_a: awayTeamCode,
-
-    team_h_last_w: roundsSinceLastWinOfHomeTeam,
-    team_h_last_dr: roundsSinceLastDrawOfHomeTeam,
-    team_h_last_de: roundsSinceLastDefeatOfHomeTeam,
-    team_a_last_w: roundsSinceLastWinOfAwayTeam,
-    team_a_last_dr: roundsSinceLastDrawOfAwayTeam,
-    team_a_last_de: roundsSinceLastDefeatOfAwayTeam,
-
-    team_h_win_perc: aggregatedDataPerTeam[homeTeamCode].numberOfWins / aggregatedDataPerTeam[homeTeamCode].round,
-    team_h_dra_perc: aggregatedDataPerTeam[homeTeamCode].numberOfDraws / aggregatedDataPerTeam[homeTeamCode].round,
-    team_h_def_perc: aggregatedDataPerTeam[homeTeamCode].numberOfDefeats / aggregatedDataPerTeam[homeTeamCode].round,
-    team_a_win_perc: aggregatedDataPerTeam[awayTeamCode].numberOfWins / aggregatedDataPerTeam[awayTeamCode].round,
-    team_a_dra_perc: aggregatedDataPerTeam[awayTeamCode].numberOfDraws / aggregatedDataPerTeam[awayTeamCode].round,
-    team_a_def_perc: aggregatedDataPerTeam[awayTeamCode].numberOfDefeats / aggregatedDataPerTeam[awayTeamCode].round,
-
-    winner: winner
-  };
-
-  return matchEntry;
+  return rowAsJSON;
 }
 
 rounds.map(round => {
-  //We don't rely on the correct order if useing a regex
-  var roundNr = /[a-zA-Z]*([0-9]{1,2})[a-zA-Z]*/.exec(round.name)[1];
+  // We don't rely on the correct order if using a regex
+  const roundNr = /[a-zA-Z]*([0-9]{1,2})[a-zA-Z]*/.exec(round.name)[1];
 
-  round.matches.map(match => {
-    var winner = null;
-    var matchHasAlreadyBeenPlayed = match.score1 !== null && match.score2 !== null;
+  round.matches.map(matchData => {
+    const match = new Match(matchData, roundNr);
 
-    if ((matchHasAlreadyBeenPlayed || commander.complete) && roundNr >= 5) {
-      var column = toColumn(match, roundNr);
+    if ((match.hasBeenPlayed || commander.complete) && roundNr >= 5) {
+      const column = toColumn(match);
       csvData.push(column);
     }
 
-    if (matchHasAlreadyBeenPlayed) {
-      updateHistoryForTeams(match, roundNr);
+    if (match.hasBeenPlayed) {
+      history.addMatch(match);
+      table.addMatch(match);
     }
-  })
+  });
 });
 
 json2csv({ data: csvData }, function(err, csv) {
@@ -182,7 +106,7 @@ json2csv({ data: csvData }, function(err, csv) {
     throw err;
   }
 
-  var file = './output/' + outputFileName + '.csv';
+  const file = './output/' + outputFileName + '.csv';
 
   fs.writeFileSync(file, csv);
   logger.info('Analyzed %s', resultsPath);
