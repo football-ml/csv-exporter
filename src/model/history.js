@@ -106,12 +106,17 @@ class History {
   }
 
   winPercentageOfTeam(team) {
-    const exactPercentage = this.history[team].numberOfWins / this.lastPlayedRoundOfTeam;
+    const exactPercentage = this.history[team].numberOfWins / this.lastPlayedRoundOfTeam(team);
     return lodash.round(exactPercentage, 2);
   }
 
   drawPercentageOfTeam(team) {
-    const exactPercentage = this.history[team].numberOfDraws / this.lastPlayedRoundOfTeam;
+    const exactPercentage = this.history[team].numberOfDraws / this.lastPlayedRoundOfTeam(team);
+    return lodash.round(exactPercentage, 2);
+  }
+
+  defeatPercentageOfTeam(team) {
+    const exactPercentage = this.history[team].numberOfDefeats / this.lastPlayedRoundOfTeam(team);
     return lodash.round(exactPercentage, 2);
   }
 
@@ -125,11 +130,6 @@ class History {
 
   roundsSinceLastDefeatOfTeam(team) {
     return (this.history[team].round - this.history[team].lastDefeat) + 1;
-  }
-
-  defeatPercentageOfTeam(team) {
-    const exactPercentage = this.history[team].numberOfDefeats / this.lastPlayedRoundOfTeam;
-    return lodash.round(exactPercentage, 2);
   }
 
   hasWinningStreakOfNMatches(teamCode, n) {
@@ -167,6 +167,22 @@ class History {
     const form2 = this.calculateTeamFormForLastNMatches(teamCode2, n, weight);
 
     return form1 - form2;
+  }
+
+  calculateFormDataForTeamsOfMatch(match, roundsAgo) {
+    const homeTeam = match.team1.code;
+    const awayTeam = match.team2.code;
+    const WEIGHT = 1;
+
+    const formData = {};
+
+    roundsAgo.map(ago => {
+      formData['team_h_form_last_' + ago] = this.calculateTeamFormForLastNMatches(homeTeam, ago, WEIGHT);
+      formData['team_a_form_last_' + ago] = this.calculateTeamFormForLastNMatches(awayTeam, ago, WEIGHT);
+      formData['form_delta_last_' + ago] = this.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, ago, WEIGHT);
+    });
+
+    return formData;
   }
 }
 

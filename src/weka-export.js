@@ -15,8 +15,10 @@ commander
   .option('-y, --year [s]', 'The year of the season start', '15')
   .option('-c, --countrycode [s]', 'The country code', 'de')
   .option('-l, --league [s]', 'The league', '1')
+  .option('-R, --remote [b]', 'Use remote data from fottball.json github repo', false)
   .option('-C, --complete [b]', 'Also adds yet unplayed matches to the CSV. [default=false]', false)
   .option('-V, --verbose [b]', 'Also adds verbose data like team code that makes reading data easier for humans. [default=false]', false)
+  .option('-T, --tables [b]', 'Print tables. [default=false]', false)
   .parse(process.argv);
 
 const dataFolderName = '20' + commander.year + '-' + (parseInt(commander.year, 10) + 1);
@@ -50,15 +52,8 @@ function toColumn(match) {
     rowAsJSON.team_a = awayTeam;
   }
 
-  rowAsJSON.team_h_form_last_3 = history.calculateTeamFormForLastNMatches(homeTeam, 3, WEIGHT);
-  rowAsJSON.team_h_form_last_5 = history.calculateTeamFormForLastNMatches(homeTeam, 5, WEIGHT);
-  rowAsJSON.team_h_form_last_10 = history.calculateTeamFormForLastNMatches(homeTeam, 10, WEIGHT);
-  rowAsJSON.team_a_form_last_3 = history.calculateTeamFormForLastNMatches(awayTeam, 3, WEIGHT);
-  rowAsJSON.team_a_form_last_5 = history.calculateTeamFormForLastNMatches(awayTeam, 5, WEIGHT);
-  rowAsJSON.team_a_form_last_10 = history.calculateTeamFormForLastNMatches(awayTeam, 10, WEIGHT);
-  rowAsJSON.form_delta_last_3 = history.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, 3, WEIGHT);
-  rowAsJSON.form_delta_last_5 = history.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, 5, WEIGHT);
-  rowAsJSON.form_delta_last_10 = history.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, 10, WEIGHT);
+  const roundsAgo = [3, 5, 10];
+  const formData = history.calculateFormDataForTeamsOfMatch(match, roundsAgo);
 
   rowAsJSON.team_h_streak_w_3 = history.hasWinningStreakOfNMatches(homeTeam, 3);
   rowAsJSON.team_a_streak_w_3 = history.hasWinningStreakOfNMatches(awayTeam, 3);
@@ -77,6 +72,7 @@ function toColumn(match) {
   rowAsJSON.team_a_dra_perc = history.drawPercentageOfTeam(awayTeam);
   rowAsJSON.team_a_def_perc = history.defeatPercentageOfTeam(awayTeam);
 
+  Object.assign(rowAsJSON, formData);
   rowAsJSON.winner = match.result;
 
   return rowAsJSON;
@@ -85,11 +81,12 @@ function toColumn(match) {
 rounds.map(round => {
   // We don't rely on the correct order if using a regex
   const roundNr = /[a-zA-Z]*([0-9]{1,2})[a-zA-Z]*/.exec(round.name)[1];
+  const roundAsInt = parseInt(roundNr, 10);
 
   round.matches.map(matchData => {
-    const match = new Match(matchData, roundNr);
+    const match = new Match(matchData, roundAsInt);
 
-    if ((match.hasBeenPlayed || commander.complete) && roundNr >= 5) {
+    if ((match.hasBeenPlayed || commander.complete) && roundAsInt >= 5) {
       const column = toColumn(match);
       csvData.push(column);
     }
@@ -100,7 +97,9 @@ rounds.map(round => {
     }
   });
 
-  table.printTableForRound(roundNr);
+  if (commander.tables) {
+    table.printTableForRound(roundAsInt);
+  }
 });
 
 json2csv({ data: csvData }, function(err, csv) {

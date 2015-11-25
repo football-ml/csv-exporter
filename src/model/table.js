@@ -3,6 +3,24 @@
 const lodash = require('lodash');
 const CLITable = require('cli-table');
 
+const TABLE_STYLE = {
+  'top': '═',
+  'top-mid': '╤',
+  'top-left': '╔',
+  'top-right': '╗',
+  'bottom': '═',
+  'bottom-mid': '╧',
+  'bottom-left': '╚',
+  'bottom-right': '╝',
+  'left': '║',
+  'left-mid': '╟',
+  'mid': '─',
+  'mid-mid': '┼',
+  'right': '║',
+  'right-mid': '╢',
+  'middle': '│'
+};
+
 class Table {
   constructor(teams) {
     this.teams = teams;
@@ -107,14 +125,20 @@ class Table {
 
   printTableForRound(round) {
     const sortedTable = this.getSortedTableForRound(round);
+
+    if (sortedTable.length < 1) {
+      return;
+    }
     const table = new CLITable({
-      head: lodash.keys(sortedTable[0]).map(columnHeader => lodash.startCase(columnHeader))
+      head: lodash.keys(sortedTable[0]).map(columnHeader => lodash.startCase(columnHeader)),
+      chars: TABLE_STYLE
     });
 
     for (let i = 0; i < sortedTable.length; i++) {
       const team = sortedTable[i];
       table.push(lodash.values(team));
     }
+    console.log('Table after %s %s', round, round > 1 ? 'rounds' : 'round');
     console.log(table.toString());
   }
 }
