@@ -99,6 +99,8 @@ rounds.map(round => {
       table.addMatch(match);
     }
   });
+
+  table.printTableForRound(roundNr);
 });
 
 json2csv({ data: csvData }, function(err, csv) {

@@ -1,6 +1,7 @@
 'use strict';
 
 const lodash = require('lodash');
+const CLITable = require('cli-table');
 
 class Table {
   constructor(teams) {
@@ -11,9 +12,9 @@ class Table {
     for (const team of teams) {
       this.tablePerRound[0][team] = {
         position: 1,
+        code: team,
         movement: 0,
         lastPosition: 1,
-        code: team,
         gamesPlayed: 0,
         gamesWon: 0,
         gamesDrawn: 0,
@@ -86,7 +87,7 @@ class Table {
     this.tablePerRound[match.round][homeTeam] = updatedRoundDataForHomeTeam;
     this.tablePerRound[match.round][awayTeam] = updatedRoundDataForAwayTeam;
 
-    const sortedTable = this.sortedTableForRound(match.round);
+    const sortedTable = this.getSortedTableForRound(match.round);
 
     for (let i = 0; i < sortedTable.length; i++) {
       const team = sortedTable[i].code;
@@ -99,9 +100,22 @@ class Table {
     }
   }
 
-  sortedTableForRound(round) {
+  getSortedTableForRound(round) {
     const data = this.getTableAfterRound(round);
     return lodash.sortByOrder(data, ['points', 'goalsDifference', 'goalsFor'], ['desc', 'desc', 'desc']);
+  }
+
+  printTableForRound(round) {
+    const sortedTable = this.getSortedTableForRound(round);
+    const table = new CLITable({
+      head: lodash.keys(sortedTable[0]).map(columnHeader => lodash.startCase(columnHeader))
+    });
+
+    for (let i = 0; i < sortedTable.length; i++) {
+      const team = sortedTable[i];
+      table.push(lodash.values(team));
+    }
+    console.log(table.toString());
   }
 }
 
