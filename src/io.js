@@ -26,7 +26,16 @@ class IO {
     return cb(this);
   }
 
-  loadFromRemote(cb) {
+  loadData(fromRemote, cb) {
+    logger.info('Using source: %s', fromRemote ? 'GitHub' : 'Local File');
+    if (fromRemote) {
+      this.loadFromGithub(cb);
+    } else {
+      this.loadFromLocalFile(cb);
+    }
+  }
+
+  loadFromGithub(cb) {
     const self = this;
     const clubsTemplate = 'https://raw.githubusercontent.com/openfootball/football.json/master/%s/%s.%s.clubs.json';
     const resultsTemplate = 'https://raw.githubusercontent.com/openfootball/football.json/master/%s/%s.%s.json';
