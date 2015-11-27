@@ -7,9 +7,13 @@ const CSVBuilder = require('./src/csv-builder');
 const IO = require('./src/io');
 logger.cli();
 
+function getYear(year) {
+  return parseInt(year, 10);
+}
+
 // node src/weka-export.js -f 2015-10-29 -s 2015-11-16 -c 2015-05-04 -V
 commander
-  .option('-y, --year [n]', 'The year of the season start', 15)
+  .option('-y, --year [n]', 'The year of the season start', getYear, 15)
   .option('-c, --countrycode [s]', 'The country code', 'de')
   .option('-l, --league [s]', 'The league', '1')
   .option('-L, --local [b]', 'Use local data', false)
@@ -30,9 +34,13 @@ const ioConf = {
   year: commander.year
 };
 
+logger.info('Behaviour Config is', behaviourConf);
+logger.info('IO Config is', ioConf);
+
 const io = new IO(ioConf);
 io.loadData(commander.local, function() {
   const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
   const data = csvBuilder.makeDataForCSVExport();
   io.writeToDiskAsCSV(data);
+  process.exit(0);
 });

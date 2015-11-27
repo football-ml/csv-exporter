@@ -4,11 +4,13 @@ const Table = require('./model/table');
 const History = require('./model/history');
 const Match = require('./model/match');
 
-const lodash = require('lodash');
+const logger = require('winston');
+logger.cli();
 
 class CSVBuilder {
   constructor(rounds, clubCodes, config) {
     this.rounds = rounds;
+    this.clubCodes = clubCodes;
     this.table = new Table(clubCodes);
     this.history = new History(clubCodes);
     this.config = config;
@@ -45,6 +47,13 @@ class CSVBuilder {
       // We don't rely on the correct order if using a regex
       const roundNr = /[a-zA-Z]*([0-9]{1,2})[a-zA-Z]*/.exec(round.name)[1];
       const roundAsInt = parseInt(roundNr, 10);
+
+      const expectedNumberOfMatches = this.clubCodes.length / 2;
+      const actualMatches = round.matches.length;
+
+      if (actualMatches !== expectedNumberOfMatches) {
+        logger.error('A match seems to be missing in round %s (%s <-> %s)', roundNr, actualMatches, expectedNumberOfMatches);
+      }
 
       round.matches.map(matchData => {
         const match = new Match(matchData, roundAsInt);
