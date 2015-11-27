@@ -31,7 +31,7 @@ const ioConf = {
 };
 
 const io = new IO(ioConf);
-io.loadFromLocalFile(function() {
+io.loadFromRemote(function() {
   const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
   const data = csvBuilder.makeDataForCSVExport();
   io.writeToDiskAsCSV(data);

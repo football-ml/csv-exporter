@@ -4,6 +4,7 @@ const json2csv = require('json2csv');
 const fs = require('fs');
 const util = require('util');
 const logger = require('winston');
+const superagent = require('superagent');
 const appRootDir = require('app-root-dir').get();
 
 logger.cli();
@@ -23,6 +24,35 @@ class IO {
     this.rounds = require(appRootDir + '/' + results).rounds;
 
     return cb(this);
+  }
+
+  loadFromRemote(cb) {
+    const self = this;
+    const clubsTemplate = 'https://raw.githubusercontent.com/openfootball/football.json/master/%s/%s.%s.clubs.json';
+    const resultsTemplate = 'https://raw.githubusercontent.com/openfootball/football.json/master/%s/%s.%s.json';
+
+    const clubsURL = util.format(clubsTemplate, this.seasonAsString, this.config.country, this.config.league);
+    const resultsURL = util.format(resultsTemplate, this.seasonAsString, this.config.country, this.config.league);
+
+    superagent
+      .get(clubsURL)
+      .end(function(err, res) {
+        if (err) {
+          return cb(err);
+        }
+
+        self.clubs = JSON.parse(res.text).clubs;
+        superagent
+          .get(resultsURL)
+          .end(function(err2, res2) {
+            if (err2) {
+              return cb(err2);
+            }
+
+            self.rounds = JSON.parse(res2.text).rounds;
+            cb(self);
+          });
+      });
   }
 
   get clubCodes() {
