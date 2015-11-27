@@ -26,12 +26,12 @@ class IO {
     return cb(this);
   }
 
-  loadData(fromRemote, cb) {
-    logger.info('Using source: %s', fromRemote ? 'GitHub' : 'Local File');
-    if (fromRemote) {
-      this.loadFromGithub(cb);
-    } else {
+  loadData(fromLocal, cb) {
+    logger.info('Using source: %s', fromLocal ? 'Local File' : 'GitHub');
+    if (fromLocal) {
       this.loadFromLocalFile(cb);
+    } else {
+      this.loadFromGithub(cb);
     }
   }
 

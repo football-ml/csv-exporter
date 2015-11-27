@@ -12,7 +12,7 @@ commander
   .option('-y, --year [n]', 'The year of the season start', 15)
   .option('-c, --countrycode [s]', 'The country code', 'de')
   .option('-l, --league [s]', 'The league', '1')
-  .option('-R, --remote [b]', 'Use remote data from fottball.json github repo', false)
+  .option('-L, --local [b]', 'Use local data', false)
   .option('-C, --complete [b]', 'Also adds yet unplayed matches to the CSV. [default=false]', false)
   .option('-V, --verbose [b]', 'Also adds verbose data like team code that makes reading data easier for humans. [default=false]', false)
   .option('-T, --tables [b]', 'Print tables. [default=false]', false)
@@ -31,7 +31,7 @@ const ioConf = {
 };
 
 const io = new IO(ioConf);
-io.loadData(commander.remote, function() {
+io.loadData(commander.local, function() {
   const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
   const data = csvBuilder.makeDataForCSVExport();
   io.writeToDiskAsCSV(data);
