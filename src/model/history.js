@@ -3,9 +3,9 @@
 const lodash = require('lodash');
 
 class History {
-  constructor(teams) {
+  constructor(allTeamsInLeague) {
     this.history = {};
-    teams.map(team => {
+    allTeamsInLeague.map(team => {
       this.history[team] = {
         round: 0,
         homeHistory: [],
@@ -28,65 +28,53 @@ class History {
   }
 
   addMatchWithHomeTeamWin(match) {
-    const homeTeamCode = match.team1.code;
-    const awayTeamCode = match.team2.code;
+    this.history[match.homeTeam].homeHistory.push('W');
+    this.history[match.homeTeam].allHistory.push('W');
+    this.history[match.awayTeam].awayHistory.push('L');
+    this.history[match.awayTeam].allHistory.push('L');
+    this.history[match.homeTeam].lastWin = match.round;
+    this.history[match.awayTeam].lastDefeat = match.round;
 
-    this.history[homeTeamCode].homeHistory.push('W');
-    this.history[homeTeamCode].allHistory.push('W');
-    this.history[awayTeamCode].awayHistory.push('L');
-    this.history[awayTeamCode].allHistory.push('L');
-    this.history[homeTeamCode].lastWin = match.round;
-    this.history[awayTeamCode].lastDefeat = match.round;
+    this.history[match.homeTeam].numberOfWins += 1;
+    this.history[match.homeTeam].numberOfHomeWins += 1;
 
-    this.history[homeTeamCode].numberOfWins += 1;
-    this.history[homeTeamCode].numberOfHomeWins += 1;
-
-    this.history[awayTeamCode].numberOfDefeats += 1;
-    this.history[awayTeamCode].numberOfAwayDefeats += 1;
+    this.history[match.awayTeam].numberOfDefeats += 1;
+    this.history[match.awayTeam].numberOfAwayDefeats += 1;
   }
 
   addMatchWithDraw(match) {
-    const homeTeamCode = match.team1.code;
-    const awayTeamCode = match.team2.code;
+    this.history[match.homeTeam].homeHistory.push('X');
+    this.history[match.homeTeam].allHistory.push('X');
+    this.history[match.awayTeam].awayHistory.push('X');
+    this.history[match.awayTeam].allHistory.push('X');
+    this.history[match.homeTeam].lastDraw = match.round;
+    this.history[match.awayTeam].lastDraw = match.round;
 
-    this.history[homeTeamCode].homeHistory.push('X');
-    this.history[homeTeamCode].allHistory.push('X');
-    this.history[awayTeamCode].awayHistory.push('X');
-    this.history[awayTeamCode].allHistory.push('X');
-    this.history[homeTeamCode].lastDraw = match.round;
-    this.history[awayTeamCode].lastDraw = match.round;
+    this.history[match.homeTeam].numberOfDraws += 1;
+    this.history[match.homeTeam].numberOfHomeDraws += 1;
 
-    this.history[homeTeamCode].numberOfDraws += 1;
-    this.history[homeTeamCode].numberOfHomeDraws += 1;
-
-    this.history[awayTeamCode].numberOfDraws += 1;
-    this.history[awayTeamCode].numberOfAwayDraws += 1;
+    this.history[match.awayTeam].numberOfDraws += 1;
+    this.history[match.awayTeam].numberOfAwayDraws += 1;
   }
 
   addMatchWithAwayTeamWin(match) {
-    const homeTeamCode = match.team1.code;
-    const awayTeamCode = match.team2.code;
+    this.history[match.homeTeam].homeHistory.push('L');
+    this.history[match.homeTeam].allHistory.push('L');
+    this.history[match.awayTeam].awayHistory.push('W');
+    this.history[match.awayTeam].allHistory.push('W');
+    this.history[match.homeTeam].lastDefeat = match.round;
+    this.history[match.awayTeam].lastWin = match.round;
 
-    this.history[homeTeamCode].homeHistory.push('L');
-    this.history[homeTeamCode].allHistory.push('L');
-    this.history[awayTeamCode].awayHistory.push('W');
-    this.history[awayTeamCode].allHistory.push('W');
-    this.history[homeTeamCode].lastDefeat = match.round;
-    this.history[awayTeamCode].lastWin = match.round;
+    this.history[match.homeTeam].numberOfDefeats += 1;
+    this.history[match.homeTeam].numberOfHomeDefeats += 1;
 
-    this.history[homeTeamCode].numberOfDefeats += 1;
-    this.history[homeTeamCode].numberOfHomeDefeats += 1;
-
-    this.history[awayTeamCode].numberOfWins += 1;
-    this.history[awayTeamCode].numberOfAwayWins += 1;
+    this.history[match.awayTeam].numberOfWins += 1;
+    this.history[match.awayTeam].numberOfAwayWins += 1;
   }
 
   addMatch(match) {
-    const homeTeamCode = match.team1.code;
-    const awayTeamCode = match.team2.code;
-
-    this.history[homeTeamCode].round = match.round;
-    this.history[awayTeamCode].round = match.round;
+    this.history[match.homeTeam].round = match.round;
+    this.history[match.awayTeam].round = match.round;
 
     if (match.isHomeTeamWin) {
       this.addMatchWithHomeTeamWin(match);
@@ -101,39 +89,39 @@ class History {
     }
   }
 
-  lastPlayedRoundOfTeam(team) {
+  getLastPlayedRoundOfTeam(team) {
     return this.history[team].round;
   }
 
-  winPercentageOfTeam(team) {
-    const exactPercentage = this.history[team].numberOfWins / this.lastPlayedRoundOfTeam(team);
+  getWinPercentageOfTeam(team) {
+    const exactPercentage = this.history[team].numberOfWins / this.getLastPlayedRoundOfTeam(team);
     return lodash.round(exactPercentage, 2);
   }
 
-  drawPercentageOfTeam(team) {
-    const exactPercentage = this.history[team].numberOfDraws / this.lastPlayedRoundOfTeam(team);
+  getDrawPercentageOfTeam(team) {
+    const exactPercentage = this.history[team].numberOfDraws / this.getLastPlayedRoundOfTeam(team);
     return lodash.round(exactPercentage, 2);
   }
 
-  defeatPercentageOfTeam(team) {
-    const exactPercentage = this.history[team].numberOfDefeats / this.lastPlayedRoundOfTeam(team);
+  getDefeatPercentageOfTeam(team) {
+    const exactPercentage = this.history[team].numberOfDefeats / this.getLastPlayedRoundOfTeam(team);
     return lodash.round(exactPercentage, 2);
   }
 
-  roundsSinceLastWinOfTeam(team) {
+  getRoundsSinceLastWinOfTeam(team) {
     return (this.history[team].round - this.history[team].lastWin) + 1;
   }
 
-  roundsSinceLastDrawOfTeam(team) {
+  getRoundsSinceLastDrawOfTeam(team) {
     return (this.history[team].round - this.history[team].lastDraw) + 1;
   }
 
-  roundsSinceLastDefeatOfTeam(team) {
+  getRoundsSinceLastDefeatOfTeam(team) {
     return (this.history[team].round - this.history[team].lastDefeat) + 1;
   }
 
-  hasWinningStreakOfNMatches(teamCode, n) {
-    const allMatches = this.history[teamCode].allHistory;
+  getWinningStreakLength(team, n) {
+    const allMatches = this.history[team].allHistory;
     const relevantMatches = lodash.takeRight(allMatches, n);
 
     return relevantMatches.reduce((start, result) => {
@@ -146,8 +134,8 @@ class History {
     }, true);
   }
 
-  calculateTeamFormForLastNMatches(teamCode, n, weight /* = 1*/) {
-    const allMatches = this.history[teamCode].allHistory;
+  calculateTeamFormForLastNMatches(team, n, weight /* = 1*/) {
+    const allMatches = this.history[team].allHistory;
     const relevantMatches = lodash.takeRight(allMatches, n);
 
     return relevantMatches.reduce((start, result) => {
@@ -162,24 +150,57 @@ class History {
     }, n);
   }
 
-  calculateFormDeltaForLastNMatches(teamCode1, teamCode2, n, weight /* = 1*/) {
-    const form1 = this.calculateTeamFormForLastNMatches(teamCode1, n, weight);
-    const form2 = this.calculateTeamFormForLastNMatches(teamCode2, n, weight);
+  calculateFormDeltaForLastNMatches(teams, n, weight /* = 1*/) {
+    const form1 = this.calculateTeamFormForLastNMatches(teams.home, n, weight);
+    const form2 = this.calculateTeamFormForLastNMatches(teams.away, n, weight);
 
     return form1 - form2;
   }
 
-  calculateFormDataForTeamsOfMatch(match, roundsAgo) {
-    const homeTeam = match.team1.code;
-    const awayTeam = match.team2.code;
+  calculateRoundsSinceResultsForTeams(teams) {
+    const rowAsJSON = {};
+
+    rowAsJSON.team_h_last_w = this.getRoundsSinceLastWinOfTeam(teams.home);
+    rowAsJSON.team_h_last_dr = this.getRoundsSinceLastDrawOfTeam(teams.home);
+    rowAsJSON.team_h_last_de = this.getRoundsSinceLastDefeatOfTeam(teams.home);
+    rowAsJSON.team_a_last_w = this.getRoundsSinceLastWinOfTeam(teams.away);
+    rowAsJSON.team_a_last_dr = this.getRoundsSinceLastDrawOfTeam(teams.away);
+    rowAsJSON.team_a_last_de = this.getRoundsSinceLastDefeatOfTeam(teams.away);
+
+    return rowAsJSON;
+  }
+
+  calculatePercentageOfResultsAfterForTeams(teams) {
+    const rowAsJSON = {};
+
+    rowAsJSON.team_h_win_perc = this.getWinPercentageOfTeam(teams.home);
+    rowAsJSON.team_h_dra_perc = this.getDrawPercentageOfTeam(teams.home);
+    rowAsJSON.team_h_def_perc = this.getDefeatPercentageOfTeam(teams.home);
+    rowAsJSON.team_a_win_perc = this.getWinPercentageOfTeam(teams.away);
+    rowAsJSON.team_a_dra_perc = this.getDrawPercentageOfTeam(teams.away);
+    rowAsJSON.team_a_def_perc = this.getDefeatPercentageOfTeam(teams.away);
+
+    return rowAsJSON;
+  }
+
+  calculateWinningStreaksForTeams(teams, roundsAgo) {
+    const rowAsJSON = {};
+
+    rowAsJSON['team_h_streak_w_' + roundsAgo] = this.getWinningStreakLength(teams.home, roundsAgo);
+    rowAsJSON['team_a_streak_w_' + roundsAgo] = this.getWinningStreakLength(teams.away, roundsAgo);
+
+    return roundsAgo;
+  }
+
+  calculateFormDataForTeams(teams, roundsAgo) {
     const WEIGHT = 1;
 
     const formData = {};
 
     roundsAgo.map(ago => {
-      formData['team_h_form_last_' + ago] = this.calculateTeamFormForLastNMatches(homeTeam, ago, WEIGHT);
-      formData['team_a_form_last_' + ago] = this.calculateTeamFormForLastNMatches(awayTeam, ago, WEIGHT);
-      formData['form_delta_last_' + ago] = this.calculateFormDeltaForLastNMatches(homeTeam, awayTeam, ago, WEIGHT);
+      formData['team_h_form_last_' + ago] = this.calculateTeamFormForLastNMatches(teams.home, ago, WEIGHT);
+      formData['team_a_form_last_' + ago] = this.calculateTeamFormForLastNMatches(teams.away, ago, WEIGHT);
+      formData['form_delta_last_' + ago] = this.calculateFormDeltaForLastNMatches(teams, ago, WEIGHT);
     });
 
     return formData;

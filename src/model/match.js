@@ -20,12 +20,23 @@ class Match {
     return this.result === DRAW;
   }
 
-  get isAwayTeamWin() {
-    return this.result === AWAY_TEAM_WIN;
+  get homeTeam() {
+    return this.team1.code;
   }
 
-  get goalDifference() {
-    return Math.abs(this.match.score1 - this.match.score2);
+  get awayTeam() {
+    return this.team2.code;
+  }
+
+  get teams() {
+    return {
+      home: this.homeTeam,
+      away: this.awayTeam
+    };
+  }
+
+  get isAwayTeamWin() {
+    return this.result === AWAY_TEAM_WIN;
   }
 
   getResult() {

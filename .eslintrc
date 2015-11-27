@@ -4,6 +4,7 @@
     "comma-dangle": [2, "never"], // http://eslint.org/docs/rules/comma-dangle.html
     "guard-for-in": 0,            // http://eslint.org/docs/rules/guard-for-in.html
     "func-names": 0,              // http://eslint.org/docs/rules/func-names.html
-    "strict": 0
+    "strict": 0,
+    "generator-star-spacing": 0
   }
 }
