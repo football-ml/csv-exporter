@@ -72,11 +72,15 @@ class IO {
     return 2000 + this.config.year + '-' + (parseInt(this.config.year, 10) + 1);
   }
 
+  get yearSeasonLeague() {
+    const template = '%s_%s_%s';
+    return util.format(template, this.seasonAsString, this.config.country, this.config.league);
+  }
+
   get outputFileName() {
-    const season = this.seasonAsString;
     const filename = '%s_%s_%s_%s.csv';
 
-    return util.format(filename, Date.now(), season, this.config.country, this.config.league);
+    return util.format(filename, Date.now(), this.seasonAsString, this.config.country, this.config.league);
   }
 
   writeToDiskAsCSV(data) {
@@ -90,7 +94,7 @@ class IO {
       const file = appRootDir + '/output/' + fileName;
 
       fs.writeFileSync(file, csv);
-      logger.info('Analyzed %s', fileName);
+      logger.info('Analyzed %s', self.yearSeasonLeague);
       logger.info('CSV created and saved to', file);
     });
   }
