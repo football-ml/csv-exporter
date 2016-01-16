@@ -11,6 +11,11 @@ function getYear(year) {
   return parseInt(year, 10);
 }
 
+// Errors:
+// de_1_14 -> Round 30,
+// es_1_14 -> Round 22
+// en_1_13 -> Round 25
+// it_1_14 -> Round 11
 // node src/weka-export.js -f 2015-10-29 -s 2015-11-16 -c 2015-05-04 -V
 commander
   .option('-y, --year [n]', 'The year of the season start', getYear, 15)
@@ -40,7 +45,13 @@ logger.info('IO Config is', ioConf);
 const io = new IO(ioConf);
 io.loadData(commander.local, function() {
   const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
-  const data = csvBuilder.makeDataForCSVExport();
-  io.writeToDiskAsCSV(data);
-  process.exit(0);
+
+  try {
+    const data = csvBuilder.makeDataForCSVExport();
+    io.writeToDiskAsCSV(data);
+  } catch (e) {
+    logger.error(e.message);
+  } finally {
+    process.exit(0);
+  }
 });
