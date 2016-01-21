@@ -100,7 +100,7 @@ class IO {
       const columnNames = Object.keys(data[0]);
 
       logger.info('Calculated %s attributes:\n %s', columnNames.length, columnNames);
-      logger.info('CSV with %s entries created and saved to %s', allData.length * columnNames.length, fileName);
+      logger.info('CSV with %s data points created and saved to %s', allData.length * columnNames.length, fileName);
     });
   }
 }
