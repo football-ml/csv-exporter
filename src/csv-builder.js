@@ -67,7 +67,7 @@ class CSVBuilder {
       round.matches.map(matchData => {
         const match = new Match(matchData, roundAsInt);
 
-        if ((match.hasBeenPlayed || self.config.complete) && roundAsInt >= 5) {
+        if ((match.hasBeenPlayed || self.config.complete) && roundAsInt >= self.config.minmatches) {
           const row = self.matchToDataRow(match);
           self.filterExcluded(row);
           self.csvData.push(row);

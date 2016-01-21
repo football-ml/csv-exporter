@@ -7,7 +7,7 @@ const CSVBuilder = require('./src/csv-builder');
 const IO = require('./src/io');
 logger.cli();
 
-function getYear(year) {
+function toInt(year) {
   return parseInt(year, 10);
 }
 
@@ -16,10 +16,11 @@ function list(excludes) {
 }
 
 commander
-  .option('-y, --year [n]', 'The year of the season start in YY, i.e. 14 [default=15]', getYear, 15)
+  .option('-y, --year [n]', 'The year of the season start in YY, i.e. 14 [default=15]', toInt, 15)
   .option('-c, --countrycode [s]', 'The country code, i.e. de, es, en, it [default=de]', 'de')
   .option('-l, --league [s]', 'The league, i.e. 1 for Premier League, Serie A, 1. Bundesliga,.. [default=1]', '1')
   .option('-e, --exclude [s]', 'Excludes a certain attribute from the generated CSV, i.e. "form_delta_last_3;team_h_form_last_5" [default=[]]', list, [])
+  .option('-m, --minmatches [n]', 'The minimum number of matches that have to be played before a match is considered for the training data [default=5]', toInt, 5)
   .option('-L, --local [b]', 'Use local data instead of github etc. [default=false]', false)
   .option('-C, --complete [b]', 'Also adds yet unplayed matches to the CSV. [default=false]', false)
   .option('-V, --verbose [b]', 'Also adds verbose data like team code that makes reading data easier for humans. [default=false]', false)
@@ -29,6 +30,7 @@ commander
 const behaviourConf = {
   verbose: commander.verbose,
   exclude: commander.exclude,
+  minmatches: commander.minmatches,
   complete: commander.complete,
   tables: commander.tables
 };
@@ -41,6 +43,7 @@ const ioConf = {
 
 logger.info('Behaviour Config is', behaviourConf);
 logger.info('IO Config is', ioConf);
+logger.warn('The first %s matchdays will be ignored in training data due to --minmatches setting', behaviourConf.minmatches);
 
 const io = new IO(ioConf);
 io.loadData(commander.local, function() {
