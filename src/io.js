@@ -27,7 +27,7 @@ class IO {
   }
 
   loadData(fromLocal, cb) {
-    logger.info('Using source: %s', fromLocal ? 'Local File' : 'GitHub');
+    logger.info('Source for match results: %s', fromLocal ? 'Local File' : 'github.com/openfootball/football.json');
     if (fromLocal) {
       this.loadFromLocalFile(cb);
     } else {
@@ -94,8 +94,13 @@ class IO {
       const file = appRootDir + '/output/' + fileName;
 
       fs.writeFileSync(file, csv);
-      logger.info('Processed %s and extracted %s played matches', self.yearSeasonLeague, Object.keys(data).length);
-      logger.info('CSV created and saved to', fileName);
+
+      const allData = Object.keys(data);
+      logger.info('Processed %s matches for %s', allData.length, self.yearSeasonLeague);
+      const columnNames = Object.keys(data[0]);
+
+      logger.info('Calculated %s attributes:\n %s', columnNames.length, columnNames);
+      logger.info('CSV with %s entries created and saved to %s', allData.length * columnNames.length, fileName);
     });
   }
 }

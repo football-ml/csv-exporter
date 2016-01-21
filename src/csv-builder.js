@@ -15,6 +15,15 @@ class CSVBuilder {
     this.history = new History(clubCodes);
     this.config = config;
     this.csvData = [];
+    this.exclude = config.exclude;
+  }
+
+  filterExcluded(rowAsJSON) {
+    this.exclude.map(exclude => {
+      delete rowAsJSON[exclude];
+    });
+
+    return rowAsJSON;
   }
 
   matchToDataRow(match) {
@@ -60,6 +69,7 @@ class CSVBuilder {
 
         if ((match.hasBeenPlayed || self.config.complete) && roundAsInt >= 5) {
           const row = self.matchToDataRow(match);
+          self.filterExcluded(row);
           self.csvData.push(row);
         }
 
