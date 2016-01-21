@@ -18,10 +18,10 @@ function getYear(year) {
 // it_1_14 -> Round 11
 // node src/weka-export.js -f 2015-10-29 -s 2015-11-16 -c 2015-05-04 -V
 commander
-  .option('-y, --year [n]', 'The year of the season start', getYear, 15)
-  .option('-c, --countrycode [s]', 'The country code', 'de')
-  .option('-l, --league [s]', 'The league', '1')
-  .option('-L, --local [b]', 'Use local data', false)
+  .option('-y, --year [n]', 'The year of the season start in YY, i.e. 14 [default=15]', getYear, 15)
+  .option('-c, --countrycode [s]', 'The country code, i.e. de, es, en, it [default=de]', 'de')
+  .option('-l, --league [s]', 'The league, i.e. 1 for Premier League, Serie A, 1. Bundesliga,.. [default=1]', '1')
+  .option('-L, --local [b]', 'Use local data instead of github etc. [default=false]', false)
   .option('-C, --complete [b]', 'Also adds yet unplayed matches to the CSV. [default=false]', false)
   .option('-V, --verbose [b]', 'Also adds verbose data like team code that makes reading data easier for humans. [default=false]', false)
   .option('-T, --tables [b]', 'Print tables. [default=false]', false)
