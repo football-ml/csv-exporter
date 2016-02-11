@@ -3,6 +3,8 @@
 const commander = require('commander');
 const logger = require('winston');
 
+const co = require('co');
+
 const CSVBuilder = require('./src/csv-builder');
 const IO = require('./src/io');
 logger.cli();
@@ -45,16 +47,21 @@ logger.info('Behaviour Config is', behaviourConf);
 logger.info('IO Config is', ioConf);
 logger.warn('The first %s matchdays will be ignored in training data due to --minmatches setting', behaviourConf.minmatches);
 
-const io = new IO(ioConf);
-io.loadData(commander.local, function() {
-  const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
+const start = Date.now();
+co(function *() {
+  const io = new IO(ioConf);
+  yield io.loadData(commander.local);
 
-  try {
-    const data = csvBuilder.makeDataForCSVExport();
-    io.writeToDiskAsCSV(data);
-  } catch (e) {
-    logger.error(e.message);
-  } finally {
-    process.exit(0);
-  }
+  const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
+  const data = csvBuilder.makeDataForCSVExport();
+
+  io.writeToDiskAsCSV(data);
+
+  return data;
+}).then(() => {
+  logger.info(`Export took ${Date.now() - start} ms`);
+  process.exit(0);
+}).catch((err) => {
+  logger.error(err);
+  process.exit(0);
 });
