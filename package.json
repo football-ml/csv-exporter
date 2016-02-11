@@ -3,9 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "devDependencies": {
-    "eslint": "1.10.1",
-    "eslint-config-airbnb": "*",
-    "eslint-plugin-react": "*"
+    "eslint": "*",
+    "eslint-config-airbnb": "*"
   },
   "dependencies": {
     "app-root-dir": "1.0.2",
@@ -13,11 +12,17 @@
     "cheerio": "0.19.0",
     "cli-table": "*",
     "commander": "2.9.0",
+    "co": "*",
     "jsonfile": "2.2.3",
     "json2csv": "3.0.1",
     "lodash": "3.10.1",
     "moment": "2.10.6",
     "superagent": "1.4.0",
     "winston": "2.1.0"
+  },
+  "scripts": {
+    "export": "node index.js --",
+    "lint": "eslint src/ index.js "
   }
+
 }
