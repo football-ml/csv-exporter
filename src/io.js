@@ -8,6 +8,7 @@ const logger = require('winston');
 const appRootDir = require('app-root-dir').get();
 
 const GithubProxy = require('./provider/github');
+const TransfermarktProxy = require('./provider/transfermarkt-de');
 const LocalFileLoader = require('./provider/local');
 
 logger.cli();
@@ -15,6 +16,7 @@ logger.cli();
 class IO {
   constructor(config) {
     this.config = config;
+    this.clubMeta = {};
     this.clubs = [];
     this.rounds = [];
   }
@@ -28,7 +30,28 @@ class IO {
     }.bind(this));
   }
 
-  loadData(fromLocal) {
+  loadClubMeta() {
+    const self = this;
+
+    return co(function*() {
+      for (const clubCode of self.clubCodes) {
+        self.clubMeta[clubCode] = TransfermarktProxy.getTeamInfo(clubCode, self.fourDigitSeasonStartYear);
+      }
+      yield self.clubMeta;
+
+      /* WTF, why is this needed? Am I dumb? */
+      for (const clubCode in self.clubMeta) {
+        yield self.clubMeta[clubCode].then(function(data) {
+          self.clubMeta[clubCode] = data;
+        });
+      }
+      /* WTF End */
+
+      return;
+    });
+  }
+
+  loadClubAndMatchData(fromLocal) {
     logger.info('Source for match results: %s', fromLocal ? 'Local File' : 'github.com/openfootball/football.json');
     return fromLocal ? this.loadFromLocalFile() : this.loadFromGithub();
   }
@@ -40,6 +63,10 @@ class IO {
 
       return this;
     }.bind(this));
+  }
+
+  get fourDigitSeasonStartYear() {
+    return `20${this.config.year}`;
   }
 
   get clubCodes() {
