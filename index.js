@@ -50,7 +50,8 @@ logger.warn('The first %s matchdays will be ignored in training data due to --mi
 const start = Date.now();
 co(function *() {
   const io = new IO(ioConf);
-  yield io.loadData(commander.local);
+  yield io.loadClubAndMatchData(commander.local);
+  yield io.loadClubMeta();
 
   const csvBuilder = new CSVBuilder(io.rounds, io.clubCodes, behaviourConf);
   const data = csvBuilder.makeDataForCSVExport();
