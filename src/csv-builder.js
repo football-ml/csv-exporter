@@ -3,16 +3,21 @@
 const Table = require('./model/table');
 const History = require('./model/history');
 const Match = require('./model/match');
+const Meta = require('./model/meta');
 
 const logger = require('winston');
+const co = require('co');
 logger.cli();
 
 class CSVBuilder {
-  constructor(rounds, clubCodes, config) {
-    this.rounds = rounds;
-    this.clubCodes = clubCodes;
-    this.table = new Table(clubCodes);
-    this.history = new History(clubCodes);
+  constructor(io, config) {
+    this.io = io;
+    this.rounds = io.rounds;
+    this.clubCodes = io.clubCodes;
+    this.table = new Table(io.clubCodes);
+    this.history = new History(io.clubCodes);
+    this.clubMeta = io.clubMeta;
+    this.meta = new Meta(io.clubMeta);
     this.config = config;
     this.csvData = [];
     this.exclude = config.exclude;
@@ -31,6 +36,12 @@ class CSVBuilder {
     const awayTeam = match.team2.code;
 
     const rowAsJSON = {};
+
+    if (this.config.clubmeta) {
+      rowAsJSON.team_value_ratio = this.meta.getTeamMarketValueRatio(homeTeam, awayTeam);
+      rowAsJSON.avg_pl_value_ratio = this.meta.getAveragePlayerMarketValueRatio(homeTeam, awayTeam);
+      rowAsJSON.a_int_delta = this.meta.getAInternationalsDelta(homeTeam, awayTeam);
+    }
 
     if (this.config.verbose) {
       rowAsJSON.round = match.round;
@@ -51,40 +62,43 @@ class CSVBuilder {
   }
 
   makeDataForCSVExport() {
-    const self = this;
-    this.rounds.map(round => {
-      // We don't rely on the correct order if using a regex
-      const roundNr = /[a-zA-Z]*([0-9]{1,2})[a-zA-Z]*/.exec(round.name)[1];
-      const roundAsInt = parseInt(roundNr, 10);
+    return co(function *() {
+      const self = this;
 
-      const expectedNumberOfMatches = this.clubCodes.length / 2;
-      const actualMatches = round.matches.length;
+      this.rounds.map(round => {
+        // We don't rely on the correct order if using a regex
+        const roundNr = /[a-zA-Z]*([0-9]{1,2})[a-zA-Z]*/.exec(round.name)[1];
+        const roundAsInt = parseInt(roundNr, 10);
 
-      if (actualMatches !== expectedNumberOfMatches) {
-        logger.error('A match seems to be missing in round %s (%s <-> %s)', roundNr, actualMatches, expectedNumberOfMatches);
-      }
+        const expectedNumberOfMatches = this.clubCodes.length / 2;
+        const actualMatches = round.matches.length;
 
-      round.matches.map(matchData => {
-        const match = new Match(matchData, roundAsInt);
-
-        if ((match.hasBeenPlayed || self.config.complete) && roundAsInt >= self.config.minmatches) {
-          const row = self.matchToDataRow(match);
-          self.filterExcluded(row);
-          self.csvData.push(row);
+        if (actualMatches !== expectedNumberOfMatches) {
+          logger.error('A match seems to be missing in round %s (%s <-> %s)', roundNr, actualMatches, expectedNumberOfMatches);
         }
 
-        if (match.hasBeenPlayed) {
-          self.history.addMatch(match);
-          self.table.addMatch(match);
+        round.matches.map(matchData => {
+          const match = new Match(matchData, roundAsInt);
+
+          if ((match.hasBeenPlayed || self.config.complete) && roundAsInt >= self.config.minmatches) {
+            const row = self.matchToDataRow(match);
+            self.filterExcluded(row);
+            self.csvData.push(row);
+          }
+
+          if (match.hasBeenPlayed) {
+            self.history.addMatch(match);
+            self.table.addMatch(match);
+          }
+        });
+
+        if (self.config.tables) {
+          self.table.printTableForRound(roundAsInt);
         }
       });
 
-      if (self.config.tables) {
-        self.table.printTableForRound(roundAsInt);
-      }
-    });
-
-    return self.csvData;
+      return self.csvData;
+    }.bind(this));
   }
 }
 
