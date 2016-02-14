@@ -1,0 +1,92 @@
+{
+  "FCB": {
+    "key": "bayern",
+    "name": "FC Bayern München",
+    "id": "27"
+  },
+  "BVB": {
+    "key": "dortmund",
+    "name": "Borussia Dortmund",
+    "id": "16"
+  },
+  "B04": {
+    "key": "leverkusen",
+    "name": "Bayer 04 Leverkusen",
+    "id": "15"
+  },
+  "S04": {
+    "key": "schalke",
+    "name": "Schalke 04",
+    "id": "33"
+  },
+  "FFM": {
+    "key": "frankfurt",
+    "name": "Eintracht Frankfurt",
+    "id": "24"
+  },
+  "HSV": {
+    "key": "hsv",
+    "name": "Hamburger SV",
+    "id": "41"
+  },
+  "BMG": {
+    "key": "mgladbach",
+    "name": "Borussia M\"gladbach",
+    "id": "18"
+  },
+  "H96": {
+    "key": "hannover",
+    "name": "Hannover 96",
+    "id": "42"
+  },
+  "WOB": {
+    "key": "wolfsburg",
+    "name": "VfL Wolfsburg",
+    "id": "82"
+  },
+  "M05": {
+    "key": "mainz",
+    "name": "1. FSV Mainz 05",
+    "id": "39"
+  },
+  "BRE": {
+    "key": "bremen",
+    "name": "Werder Bremen",
+    "id": "86"
+  },
+  "HOF": {
+    "key": "hoffenheim",
+    "name": "1899 Hoffenheim",
+    "id": "533"
+  },
+  "VFB": {
+    "key": "stuttgart",
+    "name": "Stuttgart",
+    "id": "79"
+  },
+  "FCA": {
+    "key": "augsburg",
+    "name": "FC Augsburg",
+    "id": "167"
+  },
+  "BSC": {
+    "key": "herthabsc",
+    "name": "Hertha BSC",
+    "id": "44"
+  },
+  "KOE": {
+    "key": "koeln",
+    "name": "1. FC Köln",
+    "id": "3"
+  },
+  "FCI": {
+    "key": "ingolstadt",
+    "name": "FC Ingolstadt 04",
+    "id": "4795"
+  },
+  "D98": {
+    "key": "darmstadt",
+    "name": "Darmstadt",
+    "id": "105"
+  }
+}
