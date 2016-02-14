@@ -120,7 +120,8 @@ class Table {
 
   getSortedTableForRound(round) {
     const data = this.getTableAfterRound(round);
-    return lodash.sortByOrder(data, ['points', 'goalsDifference', 'goalsFor'], ['desc', 'desc', 'desc']);
+    const orderedTable = lodash.orderBy(data, ['points', 'goalsDifference', 'goalsFor'], ['desc', 'desc', 'desc']);
+    return orderedTable;
   }
 
   printTableForRound(round) {
