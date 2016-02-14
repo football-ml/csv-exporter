@@ -1,0 +1,18 @@
+{
+  "de": {
+    "1": ["L1", "1-bundesliga"],
+    "2": ["L1", "2-bundesliga"]
+  },
+  "es": {
+    "1": ["ES1", "primera-division"],
+    "2": ["ES2", "segunda-division"]
+  },
+  "en": {
+    "1": ["GB1", "premier-league"],
+    "2": ["GB2", "championship"]
+  },
+  "it": {
+    "1": ["IT1", "serie-a"],
+    "2": ["IT2", "serie-b"]
+  }
+}
