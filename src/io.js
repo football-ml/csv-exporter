@@ -16,7 +16,6 @@ logger.cli();
 class IO {
   constructor(config) {
     this.config = config;
-    this.clubMeta = {};
     this.clubs = [];
     this.rounds = [];
   }
@@ -33,22 +32,21 @@ class IO {
   loadClubMeta() {
     const self = this;
 
-    return co(function*() {
-      for (const clubCode of self.clubCodes) {
-        self.clubMeta[clubCode] = TransfermarktProxy.getTeamInfo(clubCode, self.fourDigitSeasonStartYear);
-      }
-      yield self.clubMeta;
+    const clubMeta = {};
+    for (const clubCode of self.clubCodes) {
+      clubMeta[clubCode] = TransfermarktProxy.getTeamInfo(clubCode, self.fourDigitSeasonStartYear);
+    }
 
-      /* WTF, why is this needed? Am I dumb? */
-      for (const clubCode in self.clubMeta) {
-        yield self.clubMeta[clubCode].then(function(data) {
-          self.clubMeta[clubCode] = data;
-        });
-      }
-      /* WTF End */
+    return clubMeta;
+  }
 
-      return;
-    });
+  loadRoundMeta(start, end) {
+    const allMatchdays = {};
+    for (let i = start; i <= end; i++) {
+      allMatchdays[i] = TransfermarktProxy.getMatchdayInfo(this.config.country, this.config.league, this.fourDigitSeasonStartYear, i);
+    }
+
+    return allMatchdays;
   }
 
   loadClubAndMatchData(fromLocal) {
