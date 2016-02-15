@@ -6,7 +6,7 @@ const logger = require('winston');
 const co = require('co');
 
 const CSVBuilder = require('./src/csv-builder');
-const IO = require('./src/io');
+const DataPool = require('./src/data-pool');
 logger.cli();
 
 function toInt(year) {
@@ -39,33 +39,36 @@ const behaviourConf = {
   tables: commander.tables
 };
 
-const ioConf = {
+const dataPoolConfig = {
   league: commander.league,
   country: commander.countrycode,
   year: commander.year
 };
 
 logger.info('Behaviour Config is', behaviourConf);
-logger.info('IO Config is', ioConf);
+logger.info('DataPool Config is', dataPoolConfig);
 logger.warn('The first %s matchdays will be ignored in training data due to --minmatches setting', behaviourConf.minmatches);
 
 const start = Date.now();
 co(function *() {
-  const io = new IO(ioConf);
-  yield io.loadClubAndMatchData(commander.local);
+  const datapool = new DataPool(dataPoolConfig);
+  const _data = yield datapool.loadClubAndMatchData(commander.local);
+
+  datapool.clubs = _data.clubs;
+  datapool.rounds = _data.rounds;
 
   if (behaviourConf.clubmeta) {
-    io.clubMeta = yield io.loadClubMeta();
-    logger.info('Got club metadata from transfermarkt.de for %s clubs', Object.keys(io.clubMeta).length);
+    datapool.clubMeta = yield datapool.loadClubMeta();
+    logger.info('Got club metadata from transfermarkt.de for %s clubs', Object.keys(datapool.clubMeta).length);
   }
 
-  io.roundMeta = yield io.loadRoundMeta(1, 10);
-  logger.info('Got round metadata from transfermarkt.de for %s rounds', Object.keys(io.roundMeta).length);
+  datapool.roundMeta = yield datapool.loadRoundMeta(1, 10);
+  logger.info('Got round metadata from transfermarkt.de for %s rounds', Object.keys(datapool.roundMeta).length);
 
-  const csvBuilder = new CSVBuilder(io, behaviourConf);
+  const csvBuilder = new CSVBuilder(datapool, behaviourConf);
   const data = yield csvBuilder.makeDataForCSVExport();
 
-  io.writeToDiskAsCSV(data);
+  datapool.writeToDiskAsCSV(data);
 
   return data;
 }).then(() => {

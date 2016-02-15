@@ -13,7 +13,7 @@ const LocalFileLoader = require('./provider/local');
 
 logger.cli();
 
-class IO {
+class DataPool {
   constructor(config) {
     this.config = config;
     this.clubs = [];
@@ -21,12 +21,10 @@ class IO {
   }
 
   loadFromLocalFile() {
-    return co(function*() {
-      this.clubs = yield LocalFileLoader.getClubsAsJson(this.seasonAsString, this.config.country, this.config.league);
-      this.rounds = yield LocalFileLoader.getResultsAsJson(this.seasonAsString, this.config.country, this.config.league);
-
-      return this;
-    }.bind(this));
+    return {
+      clubs: LocalFileLoader.getClubsAsJson(this.seasonAsString, this.config.country, this.config.league),
+      rounds: LocalFileLoader.getResultsAsJson(this.seasonAsString, this.config.country, this.config.league)
+    };
   }
 
   loadClubMeta() {
@@ -55,12 +53,10 @@ class IO {
   }
 
   loadFromGithub() {
-    return co(function*() {
-      this.clubs = yield GithubProxy.getClubsAsJson(this.seasonAsString, this.config.country, this.config.league);
-      this.rounds = yield GithubProxy.getResultsAsJson(this.seasonAsString, this.config.country, this.config.league);
-
-      return this;
-    }.bind(this));
+    return {
+      clubs: GithubProxy.getClubsAsJson(this.seasonAsString, this.config.country, this.config.league),
+      rounds: GithubProxy.getResultsAsJson(this.seasonAsString, this.config.country, this.config.league)
+    };
   }
 
   get fourDigitSeasonStartYear() {
@@ -110,4 +106,4 @@ class IO {
   }
 }
 
-module.exports = IO;
+module.exports = DataPool;
