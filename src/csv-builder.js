@@ -10,15 +10,20 @@ const co = require('co');
 logger.cli();
 
 class CSVBuilder {
-  constructor(io, config) {
-    this.io = io;
-    this.rounds = io.rounds;
-    this.clubCodes = io.clubCodes;
-    this.table = new Table(io.clubCodes);
-    this.history = new History(io.clubCodes);
-    this.clubMeta = io.clubMeta;
-    this.meta = new Meta(io.clubMeta);
+  constructor(clubs, rounds, clubMeta, roundMeta, config) {
+    this.clubs = clubs;
+    this.clubCodes = clubs.map(club => club.code);
+    this.rounds = rounds;
+
+    this.clubMeta = clubMeta;
+    this.roundMeta = roundMeta;
+
     this.config = config;
+
+    this.meta = new Meta(clubMeta);
+    this.table = new Table(this.clubCodes);
+    this.history = new History(this.clubCodes);
+
     this.csvData = [];
     this.exclude = config.exclude;
   }

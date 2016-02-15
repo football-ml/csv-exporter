@@ -2,7 +2,6 @@
 
 const json2csv = require('json2csv');
 const fs = require('fs');
-const co = require('co');
 const util = require('util');
 const logger = require('winston');
 const appRootDir = require('app-root-dir').get();
@@ -27,11 +26,11 @@ class DataPool {
     };
   }
 
-  loadClubMeta() {
+  loadClubMeta(clubCodes) {
     const self = this;
 
     const clubMeta = {};
-    for (const clubCode of self.clubCodes) {
+    for (const clubCode of clubCodes) {
       clubMeta[clubCode] = TransfermarktProxy.getTeamInfo(clubCode, self.fourDigitSeasonStartYear);
     }
 
@@ -48,7 +47,6 @@ class DataPool {
   }
 
   loadClubAndMatchData(fromLocal) {
-    logger.info('Source for match results: %s', fromLocal ? 'Local File' : 'github.com/openfootball/football.json');
     return fromLocal ? this.loadFromLocalFile() : this.loadFromGithub();
   }
 
@@ -63,8 +61,8 @@ class DataPool {
     return `20${this.config.year}`;
   }
 
-  get clubCodes() {
-    return this.clubs.map(club => club.code);
+  static toClubCodes(clubs) {
+    return clubs.map(club => club.code);
   }
 
   get seasonAsString() {

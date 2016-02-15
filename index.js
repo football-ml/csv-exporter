@@ -30,7 +30,7 @@ commander
   .option('-T, --tables [b]', 'Print tables. [default=false]', false)
   .parse(process.argv);
 
-const behaviourConf = {
+const exporterConfig = {
   verbose: commander.verbose,
   exclude: commander.exclude,
   minmatches: commander.minmatches,
@@ -45,32 +45,35 @@ const dataPoolConfig = {
   year: commander.year
 };
 
-logger.info('Behaviour Config is', behaviourConf);
+logger.info('Behaviour Config is', exporterConfig);
 logger.info('DataPool Config is', dataPoolConfig);
-logger.warn('The first %s matchdays will be ignored in training data due to --minmatches setting', behaviourConf.minmatches);
+logger.warn('The first %s matchdays will be ignored in training data due to --minmatches setting', exporterConfig.minmatches);
 
 const start = Date.now();
 co(function *() {
   const datapool = new DataPool(dataPoolConfig);
-  const _data = yield datapool.loadClubAndMatchData(commander.local);
+  const fixturesData = yield datapool.loadClubAndMatchData(commander.local);
+  logger.info('Got league fixtures, clubs and results from %s', commander.local ? 'Local File' : 'github.com/openfootball/football.json');
 
-  datapool.clubs = _data.clubs;
-  datapool.rounds = _data.rounds;
+  const clubCodes = DataPool.toClubCodes(fixturesData.clubs);
 
-  if (behaviourConf.clubmeta) {
-    datapool.clubMeta = yield datapool.loadClubMeta();
-    logger.info('Got club metadata from transfermarkt.de for %s clubs', Object.keys(datapool.clubMeta).length);
+  let clubMeta = {};
+
+  // Optional until all transfermarkt.de id mappings are created. Currently only for (de, 1, 2015)
+  if (exporterConfig.clubmeta) {
+    clubMeta = yield datapool.loadClubMeta(clubCodes);
+    logger.info('Got club metadata from transfermarkt.de for %s clubs', Object.keys(clubMeta).length);
   }
 
-  datapool.roundMeta = yield datapool.loadRoundMeta(1, 10);
-  logger.info('Got round metadata from transfermarkt.de for %s rounds', Object.keys(datapool.roundMeta).length);
+  const roundMeta = yield datapool.loadRoundMeta(1, 10);
+  logger.info('Got round metadata from transfermarkt.de for %s rounds', Object.keys(roundMeta).length);
 
-  const csvBuilder = new CSVBuilder(datapool, behaviourConf);
-  const data = yield csvBuilder.makeDataForCSVExport();
+  const csvBuilder = new CSVBuilder(fixturesData.clubs, fixturesData.rounds, clubMeta, roundMeta, exporterConfig);
+  const CSVData = yield csvBuilder.makeDataForCSVExport();
 
-  datapool.writeToDiskAsCSV(data);
+  datapool.writeToDiskAsCSV(CSVData);
 
-  return data;
+  return CSVData;
 }).then(() => {
   logger.info(`Export took ${Date.now() - start} ms`);
   process.exit(0);
