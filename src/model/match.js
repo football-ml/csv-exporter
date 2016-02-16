@@ -40,9 +40,15 @@ class Match {
   }
 
   getResult() {
+    if (this.score1 === null || this.score2 === null) {
+      return null;
+    }
+
     if (this.score1 > this.score2) {
       return HOME_TEAM_WIN;
     }
+
+
     return this.score1 < this.score2 ? AWAY_TEAM_WIN : DRAW;
   }
 

@@ -5,7 +5,7 @@ const logger = require('winston');
 
 const co = require('co');
 
-const CSVBuilder = require('./src/csv-builder');
+const DataProcessor = require('./src/data-processor');
 const DataPool = require('./src/data-pool');
 logger.cli();
 
@@ -53,7 +53,10 @@ const start = Date.now();
 co(function *() {
   const datapool = new DataPool(dataPoolConfig);
   const fixturesData = yield datapool.loadClubAndMatchData(commander.local);
+  const lastPlayedRound = DataProcessor.lastCompletelyFinishedRound(fixturesData.rounds);
+
   logger.info('Got league fixtures, clubs and results from %s', commander.local ? 'Local File' : 'github.com/openfootball/football.json');
+  logger.info('Last completely played game day is %s', lastPlayedRound);
 
   const clubCodes = DataPool.toClubCodes(fixturesData.clubs);
 
@@ -65,17 +68,27 @@ co(function *() {
     logger.info('Got club metadata from transfermarkt.de for %s clubs', Object.keys(clubMeta).length);
   }
 
-  const roundMeta = yield datapool.loadRoundMeta(1, 10);
-  logger.info('Got round metadata from transfermarkt.de for %s rounds', Object.keys(roundMeta).length);
+  const roundMeta = yield datapool.loadRoundMeta(exporterConfig.minmatches, lastPlayedRound + 1);
+  logger.info('Got round metadata from transfermarkt.de for %s - %s = %s rounds', lastPlayedRound + 1, exporterConfig.minmatches - 1, Object.keys(roundMeta).length);
 
-  const csvBuilder = new CSVBuilder(fixturesData.clubs, fixturesData.rounds, clubMeta, roundMeta, exporterConfig);
-  const CSVData = yield csvBuilder.makeDataForCSVExport();
+  const dataProcessor = new DataProcessor(fixturesData.clubs, fixturesData.rounds, clubMeta, roundMeta, lastPlayedRound, exporterConfig);
 
-  datapool.writeToDiskAsCSV(CSVData);
+  const data = dataProcessor.makeData();
 
-  return CSVData;
-}).then(() => {
+  const trainDataPath = yield datapool.writeTrainingDataToDiskAsCSV(data.trainingData);
+  const testDataPath = yield datapool.writeTestDataToDiskAsCSV(data.testData);
+
+  const allData = Object.keys(data.trainingData);
+  const columnNames = Object.keys(data.trainingData[0]);
+
+  logger.info('Training Data: Processed %s matches for %s', allData.length, this.yearSeasonLeague);
+  logger.info('Training Data: Calculated %s attributes:\n %s', columnNames.length, columnNames);
+  logger.info('Saved training data set to %s', trainDataPath);
+  logger.info('Saved test data set to %s', testDataPath);
   logger.info(`Export took ${Date.now() - start} ms`);
+
+  return data;
+}).then(() => {
   process.exit(0);
 }).catch((err) => {
   logger.error(err);

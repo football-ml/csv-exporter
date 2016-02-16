@@ -4,6 +4,7 @@ const json2csv = require('json2csv');
 const fs = require('fs');
 const util = require('util');
 const logger = require('winston');
+
 const appRootDir = require('app-root-dir').get();
 
 const GithubProxy = require('./provider/github');
@@ -17,6 +18,7 @@ class DataPool {
     this.config = config;
     this.clubs = [];
     this.rounds = [];
+    this.timeOfInstantiation = Date.now();
   }
 
   loadFromLocalFile() {
@@ -76,30 +78,40 @@ class DataPool {
     return util.format(template, this.seasonAsString, this.config.country, this.config.league);
   }
 
-  get outputFileName() {
-    const filename = '%s_%s_%s_%s.csv';
+  outputFileName(suffix) {
+    const filename = '%s_%s_%s_%s_%s.csv';
 
-    return util.format(filename, Date.now(), this.seasonAsString, this.config.country, this.config.league);
+    return util.format(filename, this.timeOfInstantiation, this.seasonAsString, this.config.country, this.config.league, suffix);
   }
 
-  writeToDiskAsCSV(data) {
-    const self = this;
-    json2csv({ data }, (err, csv) => {
-      if (err) {
-        throw err;
-      }
+  writeTrainingDataToDiskAsCSV(data) {
 
-      const fileName = self.outputFileName;
-      const file = `${appRootDir}/output/${fileName}`;
 
-      fs.writeFileSync(file, csv);
+    return this._writeToDiskAsCSV(data, 'train');
+  }
 
-      const allData = Object.keys(data);
-      logger.info('Processed %s matches for %s', allData.length, self.yearSeasonLeague);
-      const columnNames = Object.keys(data[0]);
+  writeTestDataToDiskAsCSV(data) {
+    return this._writeToDiskAsCSV(data, 'test');
+  }
 
-      logger.info('Calculated %s attributes:\n %s', columnNames.length, columnNames);
-      logger.info('CSV with %s data points created and saved to %s', allData.length * columnNames.length, fileName);
+  _writeToDiskAsCSV(data, suffix) {
+    return new Promise((resolve, reject) => {
+      json2csv({ data }, (err, csv) => {
+        if (err) {
+          reject(err);
+        }
+
+        const fileName = this.outputFileName(suffix);
+        const file = `${appRootDir}/output/${fileName}`;
+
+        const allData = Object.keys(data);
+        const columnNames = Object.keys(data[0]);
+
+        fs.writeFileSync(file, csv);
+
+        logger.info('CSV with %s data points created and saved to %s', allData.length * columnNames.length, fileName);
+        resolve(fileName);
+      });
     });
   }
 }
