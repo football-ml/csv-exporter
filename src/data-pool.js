@@ -85,8 +85,6 @@ class DataPool {
   }
 
   writeTrainingDataToDiskAsCSV(data) {
-
-
     return this._writeToDiskAsCSV(data, 'train');
   }
 

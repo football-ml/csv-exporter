@@ -22,7 +22,7 @@ class DataProcessor {
 
     this.config = config;
 
-    this.meta = new Meta(clubMeta);
+    this.meta = new Meta(clubMeta, roundMeta);
     this.table = new Table(this.clubCodes);
     this.history = new History(this.clubCodes);
 
@@ -54,29 +54,26 @@ class DataProcessor {
   }
 
   matchToDataRow(match) {
-    const homeTeam = match.team1.code;
-    const awayTeam = match.team2.code;
-
     const rowAsJSON = {};
-
-    if (this.config.clubmeta) {
-      rowAsJSON.team_value_ratio = this.meta.getTeamMarketValueRatio(homeTeam, awayTeam);
-      rowAsJSON.avg_pl_value_ratio = this.meta.getAveragePlayerMarketValueRatio(homeTeam, awayTeam);
-      rowAsJSON.a_int_delta = this.meta.getAInternationalsDelta(homeTeam, awayTeam);
-    }
 
     if (this.config.verbose) {
       rowAsJSON.round = match.round;
-      rowAsJSON.team_h = homeTeam;
-      rowAsJSON.team_a = awayTeam;
+      rowAsJSON.team_h = match.teams.home;
+      rowAsJSON.team_a = match.teams.away;
     }
 
-    const formData = this.history.calculateFormDataForTeams(match.teams, [3, 5, 10]);
-    const winningStreaks = this.history.calculateWinningStreaksForTeams(match.teams, 3);
     const roundsSinceResult = this.history.calculateRoundsSinceResultsForTeams(match.teams);
+    const winningStreaks = this.history.calculateWinningStreaksForTeams(match.teams, 3);
+    const formData = this.history.calculateFormDataForTeams(match.teams, [3, 5, 10]);
     const resultsPercentages = this.history.calculatePercentageOfResultsAfterForTeams(match.teams);
+    const roundMeta = this.meta.calculateMetaForMatch(match);
 
-    Object.assign(rowAsJSON, formData, winningStreaks, roundsSinceResult, resultsPercentages);
+    Object.assign(rowAsJSON, roundsSinceResult, winningStreaks, formData, resultsPercentages, roundMeta);
+
+    if (this.config.clubmeta) {
+      const teamMeta = this.meta.calculateMetaForTeams(match.teams);
+      Object.assign(rowAsJSON, teamMeta);
+    }
 
     rowAsJSON.winner = match.result;
 
@@ -93,7 +90,7 @@ class DataProcessor {
       const actualMatches = round.matches.length;
 
       if (actualMatches !== expectedNumberOfMatches) {
-        logger.error('A match seems to be missing in round %s (%s <-> %s)', roundNr, actualMatches, expectedNumberOfMatches);
+        logger.error('A match seems to be missing in round %s (%s <-> %s)', roundAsInt, actualMatches, expectedNumberOfMatches);
       }
 
       round.matches.map(matchData => {
