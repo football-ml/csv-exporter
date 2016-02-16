@@ -1,4 +1,19 @@
 EDGE Talk '16
 
-Binning: weka.filters.unsupervised.attribute.Discretize -B 3 -M -1.0 -R first-last
-Removing: weka.filters.unsupervised.attribute.Remove -V -R 1,2,3,10,15,18,19,20,21,23,last
+Binning:
+
+weka.filters.unsupervised.attribute.Discretize -B 3 -M -1.0 -R first-last
+
+Removing:
+
+weka.filters.unsupervised.attribute.Remove -V -R 3,13,20,22,25,26,last
+weka.filters.unsupervised.attribute.Remove -V -R 26,22,16,13,25,20,3,24,last
+
+50.6173 %
+
+
+weka.filters.unsupervised.attribute.Discretize -V -B 5 -M -1.0 -R 16,last
+weka.filters.unsupervised.attribute.Remove -V -R 5,19,4,18,6,10,7,20,16,1,last
+weka.filters.unsupervised.instance.RemoveRange -R 1-81
+
+More Options > Output Predictions > Text
