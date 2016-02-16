@@ -1,0 +1,4 @@
+EDGE Talk '16
+
+Binning: weka.filters.unsupervised.attribute.Discretize -B 3 -M -1.0 -R first-last
+Removing: weka.filters.unsupervised.attribute.Remove -V -R 1,2,3,10,15,18,19,20,21,23,last
