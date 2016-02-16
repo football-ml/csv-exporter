@@ -41,7 +41,7 @@ class Match {
 
   getResult() {
     if (this.score1 === null || this.score2 === null) {
-      return null;
+      return undefined;
     }
 
     if (this.score1 > this.score2) {

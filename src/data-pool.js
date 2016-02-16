@@ -104,12 +104,9 @@ class DataPool {
         const fileName = this.outputFileName(suffix);
         const file = `${appRootDir}/output/${fileName}`;
 
-        const allData = Object.keys(data);
-        const columnNames = Object.keys(data[0]);
-
         fs.writeFileSync(file, csv);
 
-        logger.info('CSV with %s data points created and saved to %s', allData.length * columnNames.length, fileName);
+
         resolve(fileName);
       });
     });

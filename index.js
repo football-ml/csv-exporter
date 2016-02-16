@@ -81,8 +81,9 @@ co(function *() {
   const allData = Object.keys(data.trainingData);
   const columnNames = Object.keys(data.trainingData[0]);
 
-  logger.info('Training Data: Processed %s matches for %s', allData.length, this.yearSeasonLeague);
+  logger.info('Training Data: Processed %s matches for %s', allData.length, datapool.yearSeasonLeague);
   logger.info('Training Data: Calculated %s attributes:\n %s', columnNames.length, columnNames);
+  logger.info('Training Data: %s data points calculated', allData.length * columnNames.length);
   logger.info('Saved training data set to %s', trainDataPath);
   logger.info('Saved test data set to %s', testDataPath);
   logger.info(`Export took ${Date.now() - start} ms`);

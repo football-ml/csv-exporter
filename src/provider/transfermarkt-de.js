@@ -13,7 +13,7 @@ const leagueIdMapping = require('./transfermarkt-league-ids.json');
 class TransfermarktProxy {
   static marketValueStringToNumber(marketValueString) {
     if (!marketValueString) {
-      logger.error(`Market value could not be determined`);
+      logger.error(`Market value could not be determined for input: %s`, marketValueString);
       return 0;
     }
 
@@ -57,7 +57,7 @@ class TransfermarktProxy {
   // http://www.transfermarkt.de/fc-bayern-munchen/startseite/verein/27/saison_id/2015 <- Bayern (=27), 2015
   static getTeamInfo(teamCode, season) {
     if (!teamIdMapping[teamCode]) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         resolve({});
       });
     }
@@ -94,7 +94,6 @@ class TransfermarktProxy {
 
   // http://www.transfermarkt.de/1-bundesliga/spieltag/wettbewerb/L1/plus/?saison_id=2015&spieltag=22 (Liga 1)
   static getMatchdayInfo(country, league, season, matchday) {
-
     const leagueInTMTerminology = leagueIdMapping[country][league];
 
     const tmNameShort = leagueInTMTerminology[0];
