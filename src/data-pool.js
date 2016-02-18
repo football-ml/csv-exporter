@@ -59,6 +59,10 @@ class DataPool {
     };
   }
 
+  getRound(n) {
+    return this.rounds[n];
+  }
+
   get fourDigitSeasonStartYear() {
     return `20${this.config.year}`;
   }
@@ -84,6 +88,11 @@ class DataPool {
     return util.format(filename, this.timeOfInstantiation, this.seasonAsString, this.config.country, this.config.league, suffix);
   }
 
+  writeFullDataToDiskAsCSV(trainingData, testData) {
+    const data = trainingData.concat(testData);
+    return this._writeToDiskAsCSV(data, 'full');
+  }
+
   writeTrainingDataToDiskAsCSV(data) {
     return this._writeToDiskAsCSV(data, 'train');
   }
@@ -103,7 +112,6 @@ class DataPool {
         const file = `${appRootDir}/output/${fileName}`;
 
         fs.writeFileSync(file, csv);
-
 
         resolve(fileName);
       });

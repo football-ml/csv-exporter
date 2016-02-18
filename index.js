@@ -1,7 +1,10 @@
 'use strict';
 
+const util = require('util');
+
 const commander = require('commander');
 const logger = require('winston');
+const lodash = require('lodash');
 
 const co = require('co');
 
@@ -25,6 +28,7 @@ commander
   .option('-m, --minmatches [n]', 'The minimum number of matches that have to be played before a match is considered for the training data [default=5]', toInt, 5)
   .option('-M, --clubmeta [b]', 'NOTE: Currently only supported for (de,15,1). Crawls club meta data (marketValue..) and adds it to the data set. Decreases processing speed [default=false]', false)
   .option('-L, --local [b]', 'Use local data instead of github etc. [default=false]', false)
+  .option('-F, --full [b]', 'Creates a csv with all data in addition to separate test and trainings sets. [default=false]', false)
   .option('-C, --complete [b]', 'Also adds yet unplayed matches to the CSV. [default=false]', false)
   .option('-V, --verbose [b]', 'Also adds verbose data like team code that makes reading data easier for humans. [default=false]', false)
   .option('-T, --tables [b]', 'Print tables. [default=false]', false)
@@ -35,6 +39,7 @@ const exporterConfig = {
   exclude: commander.exclude,
   minmatches: commander.minmatches,
   clubmeta: commander.clubmeta,
+  full: commander.full,
   complete: commander.complete,
   tables: commander.tables
 };
@@ -54,6 +59,7 @@ co(function *() {
   const datapool = new DataPool(dataPoolConfig);
   const fixturesData = yield datapool.loadClubAndMatchData(commander.local);
   const lastPlayedRound = DataProcessor.lastCompletelyFinishedRound(fixturesData.rounds);
+  const predictedRound = lastPlayedRound + 1;
 
   logger.info('Got league fixtures, clubs and results from %s', commander.local ? 'Local File' : 'github.com/openfootball/football.json');
   logger.info('Last completely played game day is %s', lastPlayedRound);
@@ -68,8 +74,8 @@ co(function *() {
     logger.info('Got club metadata from transfermarkt.de for %s clubs', Object.keys(clubMeta).length);
   }
 
-  const roundMeta = yield datapool.loadRoundMeta(exporterConfig.minmatches, lastPlayedRound + 1);
-  logger.info('Got round metadata from transfermarkt.de for %s - %s = %s rounds', lastPlayedRound + 1, exporterConfig.minmatches - 1, Object.keys(roundMeta).length);
+  const roundMeta = yield datapool.loadRoundMeta(exporterConfig.minmatches, predictedRound);
+  logger.info('Got round metadata from transfermarkt.de for %s - %s = %s rounds', predictedRound, exporterConfig.minmatches - 1, Object.keys(roundMeta).length);
 
   const dataProcessor = new DataProcessor(fixturesData.clubs, fixturesData.rounds, clubMeta, roundMeta, lastPlayedRound, exporterConfig);
 
@@ -77,6 +83,10 @@ co(function *() {
 
   const trainDataPath = yield datapool.writeTrainingDataToDiskAsCSV(data.trainingData);
   const testDataPath = yield datapool.writeTestDataToDiskAsCSV(data.testData);
+
+  if (exporterConfig.full) {
+    yield datapool.writeFullDataToDiskAsCSV(data.trainingData, data.testData);
+  }
 
   const allData = Object.keys(data.trainingData);
   const columnNames = Object.keys(data.trainingData[0]);
@@ -87,6 +97,8 @@ co(function *() {
   logger.info('Saved training data set to %s', trainDataPath);
   logger.info('Saved test data set to %s', testDataPath);
   logger.info(`Export took ${Date.now() - start} ms`);
+
+  logger.info('Predicted games are %s', lodash.map(fixturesData.rounds[predictedRound - 1].matches, (m, i) => util.format('[%s] %s : %s', i + 1, m.team1.code, m.team2.code)));
 
   return data;
 }).then(() => {
