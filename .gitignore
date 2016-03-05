@@ -1,5 +1,6 @@
 /output/*.csv
 /node_modules
+/edge2016
 npm-debug.log
 .idea
 *.iml
