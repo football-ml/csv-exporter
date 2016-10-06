@@ -50,7 +50,7 @@ class DataProcessor {
       }
     }
 
-    return -1;
+    return rounds.length;
   }
 
   matchToDataRow(match) {
@@ -81,8 +81,6 @@ class DataProcessor {
   }
 
   makeData() {
-    const self = this;
-
     this.rounds.map(round => {
       const roundAsInt = DataProcessor.textualDescriptionToRoundNumber(round);
 
@@ -96,26 +94,26 @@ class DataProcessor {
       round.matches.map(matchData => {
         const match = new Match(matchData, roundAsInt);
         const isRowForTestData = roundAsInt === this.lastPlayedRound + 1;
-        const enoughMatchesPlayedToCreateMeaningfulData = roundAsInt >= self.config.minmatches;
+        const enoughMatchesPlayedToCreateMeaningfulData = roundAsInt >= this.config.minmatches;
 
-        if ((match.hasBeenPlayed || self.config.complete || isRowForTestData) && enoughMatchesPlayedToCreateMeaningfulData) {
-          const row = self.matchToDataRow(match);
-          self.filterExcluded(row);
+        if ((match.hasBeenPlayed || this.config.complete || isRowForTestData) && enoughMatchesPlayedToCreateMeaningfulData) {
+          const row = this.matchToDataRow(match);
+          this.filterExcluded(row);
           if (isRowForTestData) {
-            self.testData.push(row);
+            this.testData.push(row);
           } else {
-            self.trainingData.push(row);
+            this.trainingData.push(row);
           }
         }
 
         if (match.hasBeenPlayed) {
-          self.history.addMatch(match);
-          self.table.addMatch(match);
+          this.history.addMatch(match);
+          this.table.addMatch(match);
         }
       });
 
-      if (self.config.tables) {
-        self.table.printTableForRound(roundAsInt);
+      if (this.config.tables) {
+        this.table.printTableForRound(roundAsInt);
       }
     });
 

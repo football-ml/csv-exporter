@@ -21,7 +21,7 @@ function list(excludes) {
 }
 
 commander
-  .option('-y, --year [n]', 'The year of the season start in YY, i.e. 14 [default=15]', toInt, 15)
+  .option('-y, --year [n]', 'The year of the season start in YY, i.e. 14 [default=15]', toInt, 16)
   .option('-c, --countrycode [s]', 'The country code, i.e. de, es, en, it [default=de]', 'de')
   .option('-l, --league [s]', 'The league, i.e. 1 for Premier League, Serie A, 1. Bundesliga,.. [default=1]', '1')
   .option('-e, --exclude [s]', 'Excludes a certain attribute from the generated CSV, i.e. "form_delta_last_3;team_h_form_last_5" [default=[]]', list, [])
@@ -98,12 +98,18 @@ co(function *() {
   logger.info('Saved test data set to %s', testDataPath);
   logger.info(`Export took ${Date.now() - start} ms`);
 
-  logger.info('Predicted games are %s', lodash.map(fixturesData.rounds[predictedRound - 1].matches, (m, i) => util.format('[%s] %s : %s', i + 1, m.team1.code, m.team2.code)));
+  const predictedRoundData = fixturesData.rounds[predictedRound - 1];
+
+  if (predictedRoundData) {
+    logger.info('Predicted games are %s', lodash.map(predictedRoundData.matches, (m, i) => util.format('[%s] %s : %s', i + 1, m.team1.code, m.team2.code)));
+  } else {
+    logger.warn('No games found to be predicted. This is expected if the season is over, otherwise indicates an error')
+  }
 
   return data;
 }).then(() => {
   process.exit(0);
 }).catch((err) => {
-  logger.error(err);
+  logger.error(err.message);
   process.exit(0);
 });

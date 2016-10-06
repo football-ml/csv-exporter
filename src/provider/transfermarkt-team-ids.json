@@ -88,5 +88,15 @@
     "key": "darmstadt",
     "name": "Darmstadt",
     "id": "105"
+  },
+  "SCF": {
+    "key": "freiburg",
+    "name": "SC Freiburg",
+    "id": "60"
+  },
+  "RBL": {
+    "key": "leipzig",
+    "name": "RB Leipzig",
+    "id": "23826"
   }
 }

@@ -29,11 +29,9 @@ class DataPool {
   }
 
   loadClubMeta(clubCodes) {
-    const self = this;
-
     const clubMeta = {};
     for (const clubCode of clubCodes) {
-      clubMeta[clubCode] = TransfermarktProxy.getTeamInfo(clubCode, self.fourDigitSeasonStartYear);
+      clubMeta[clubCode] = TransfermarktProxy.getTeamInfo(clubCode, this.fourDigitSeasonStartYear);
     }
 
     return clubMeta;
@@ -103,6 +101,10 @@ class DataPool {
 
   _writeToDiskAsCSV(data, suffix) {
     return new Promise((resolve, reject) => {
+      if(data.length === 0) {
+        return resolve(new Error('No data provided. Writing no CSV'))
+      }
+
       json2csv({ data }, (err, csv) => {
         if (err) {
           reject(err);
